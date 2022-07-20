@@ -1,0 +1,116 @@
+---
+title: "Reach Scale Inputs"
+output: github_document
+---
+
+# Inputs
+
+## Load packages
+
+```{r pkgLoad}
+suppressMessages(library(tidyverse))
+library(readxl)
+library(lubridate)
+```
+
+## Read in
+
+```{r}
+r0 <- read_csv("./origData/Reach1.csv",
+               na = c("", "-9999.0"))
+problems()
+```
+
+Really only need to parse out the date from the `Date` field.
+
+```{r}
+r0
+```
+
+```{r}
+
+r0 %>% 
+  distinct(Comments)
+```
+
+Ah so we have BQL issues.
+
+```{r}
+
+r0 %>% 
+  distinct(`...15`)
+```
+
+So column 15 is blank?
+
+```{r}
+glimpse(r0)
+```
+
+
+
+So `Sampling Time` is OK as a time variable. Can we parse out the date from `Date`?
+
+
+How many formats?
+
+```{r}
+r0 %>% 
+  distinct(Date) %>% 
+  print(n = 42)
+```
+
+These all appear to be dmy hms, but better check AUS dates
+
+```{r}
+r0 %>% 
+  filter(Biome == "AUS") %>% 
+  distinct(Date)
+```
+
+That looks OK. if we push this through Excel we get many problems with multiple data formats in one column. Even fancy stuff [like this](https://stackoverflow.com/questions/13764514/how-to-change-multiple-date-formats-in-same-column) does not get us out of that bother. So... maybe the parent data base exports its csv with some set of attributes that Excel tries to parse, but inconsistently.
+
+## Parsing out sample dates
+
+```{r}
+r1 <- r0 %>% 
+  # filter(Biome == "AUS") %>% 
+  # distinct(Date) %>% 
+  separate(Date, into = c("dt", "tm", "am"), sep = " ") %>% 
+  mutate(SampDate = mdy(dt)) %>% 
+  select(Biome:ReachType, SampDate, 
+         SampNum = `Sample number`,
+         SampTime = `Sampling Time (hh:mm)`,
+         Amm = `Ammonium (ug N/L)`,
+         Cl = `Chloride tracer (mg/L)`,
+         Br = `Bromide tracer (mg/L)`,
+         Comm = Comments) %>% 
+  mutate(Biome = factor(Biome),
+         SiteNumber = factor(SiteNumber),
+         ReachType = factor(ReachType))
+```
+
+## Data layout
+
+All `SiteType` are "E"
+
+```{r}
+r1 %>% distinct(SiteType)
+```
+
+
+```{r}
+xtabs(~ Biome + SiteNumber + ReachType, r1)
+```
+
+
+# Prelim plot
+
+```{r}
+ggplot(r1, aes(SampTime, Amm, colour = SiteNumber)) +
+  facet_grid(Biome ~ ReachType, scales = "free_y") + 
+  geom_line()
+
+```
+
+
