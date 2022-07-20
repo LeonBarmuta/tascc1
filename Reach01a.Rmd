@@ -41,7 +41,7 @@ r0 %>%
   distinct(`...15`)
 ```
 
-So column 15 is blank?
+So column 15 is blank.
 
 ```{r}
 glimpse(r0)
@@ -60,7 +60,7 @@ r0 %>%
   print(n = 42)
 ```
 
-These all appear to be dmy hms, but better check AUS dates
+These all appear to be mdy hms, but better check AUS dates
 
 ```{r}
 r0 %>% 
@@ -68,14 +68,14 @@ r0 %>%
   distinct(Date)
 ```
 
-That looks OK. if we push this through Excel we get many problems with multiple data formats in one column. Even fancy stuff [like this](https://stackoverflow.com/questions/13764514/how-to-change-multiple-date-formats-in-same-column) does not get us out of that bother. So... maybe the parent data base exports its csv with some set of attributes that Excel tries to parse, but inconsistently.
+That looks OK. If we push this through Excel we get many problems with multiple data formats in one column. Even fancy stuff [like this](https://stackoverflow.com/questions/13764514/how-to-change-multiple-date-formats-in-same-column) does not get us out of that bother. So... maybe the parent data base exports its csv with some set of attributes that Excel tries to parse, but inconsistently.
 
 ## Parsing out sample dates
 
+And doing some renaming and conversions to factor, etc.
+
 ```{r}
 r1 <- r0 %>% 
-  # filter(Biome == "AUS") %>% 
-  # distinct(Date) %>% 
   separate(Date, into = c("dt", "tm", "am"), sep = " ") %>% 
   mutate(SampDate = mdy(dt)) %>% 
   select(Biome:ReachType, SampDate, 
@@ -104,13 +104,24 @@ xtabs(~ Biome + SiteNumber + ReachType, r1)
 ```
 
 
-# Prelim plot
+# Preliminary plot
 
 ```{r}
 ggplot(r1, aes(SampTime, Amm, colour = SiteNumber)) +
   facet_grid(Biome ~ ReachType, scales = "free_y") + 
   geom_line()
 
+```
+
+I think this will do as a cleaned up data set. The residual issues better dealt with via separate analysis files. 
+
+```{r}
+summary(r1)
+```
+
+```{r}
+write_rds(r1, "./cleanData/r1.rds")
+write_csv(r1, "./cleanData/r1.csv")
 ```
 
 

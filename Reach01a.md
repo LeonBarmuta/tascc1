@@ -96,7 +96,7 @@ r0 %>%
     ##   <lgl>
     ## 1 NA
 
-So column 15 is blank?
+So column 15 is blank.
 
 ``` r
 glimpse(r0)
@@ -177,7 +177,7 @@ r0 %>%
     ## 41 7/29/2014 12:00:00 AM
     ## 42 7/17/2014 12:00:00 AM
 
-These all appear to be dmy hms, but better check AUS dates
+These all appear to be mdy hms, but better check AUS dates
 
 ``` r
 r0 %>% 
@@ -196,7 +196,7 @@ r0 %>%
     ## 6 8/30/2013 12:00:00 AM
     ## 7 8/2/2013 12:00:00 AM
 
-That looks OK. if we push this through Excel we get many problems with
+That looks OK. If we push this through Excel we get many problems with
 multiple data formats in one column. Even fancy stuff [like
 this](https://stackoverflow.com/questions/13764514/how-to-change-multiple-date-formats-in-same-column)
 does not get us out of that bother. So… maybe the parent data base
@@ -205,10 +205,10 @@ but inconsistently.
 
 ## Parsing out sample dates
 
+And doing some renaming and conversions to factor, etc.
+
 ``` r
 r1 <- r0 %>% 
-  # filter(Biome == "AUS") %>% 
-  # distinct(Date) %>% 
   separate(Date, into = c("dt", "tm", "am"), sep = " ") %>% 
   mutate(SampDate = mdy(dt)) %>% 
   select(Biome:ReachType, SampDate, 
@@ -262,7 +262,7 @@ xtabs(~ Biome + SiteNumber + ReachType, r1)
     ##   KNZ   0   0   0   0   0   0
     ##   LUQ  67  58  32   0   0   0
 
-# Prelim plot
+# Preliminary plot
 
 ``` r
 ggplot(r1, aes(SampTime, Amm, colour = SiteNumber)) +
@@ -273,3 +273,40 @@ ggplot(r1, aes(SampTime, Amm, colour = SiteNumber)) +
     ## Warning: Removed 4 row(s) containing missing values (geom_path).
 
 ![](Reach01a_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+I think this will do as a cleaned up data set. The residual issues
+better dealt with via separate analysis files.
+
+``` r
+summary(r1)
+```
+
+    ##  Biome       SiteType         SiteNumber ReachType    SampDate         
+    ##  ARC:498   Length:1903        1:592      C:1167    Min.   :2013-01-30  
+    ##  AUS:173   Class :character   2:602      T: 736    1st Qu.:2013-04-16  
+    ##  CPC:456   Mode  :character   3:538                Median :2013-07-25  
+    ##  CWT:386                      4: 87                Mean   :2013-09-09  
+    ##  KNZ: 90                      5: 55                3rd Qu.:2013-08-30  
+    ##  LUQ:300                      6: 29                Max.   :2014-09-13  
+    ##                                                                        
+    ##     SampNum        SampTime             Amm               Cl        
+    ##  Min.   : 0.00   Length:1903       Min.   :   0.2   Min.   :  0.00  
+    ##  1st Qu.: 7.00   Class1:hms        1st Qu.:  14.0   1st Qu.:  1.40  
+    ##  Median :13.00   Class2:difftime   Median :  39.1   Median :  8.90  
+    ##  Mean   :13.74   Mode  :numeric    Mean   : 167.8   Mean   : 20.97  
+    ##  3rd Qu.:20.00                     3rd Qu.: 100.8   3rd Qu.: 25.25  
+    ##  Max.   :38.00                     Max.   :3724.8   Max.   :434.20  
+    ##                                    NA's   :16       NA's   :116     
+    ##        Br             Comm          
+    ##  Min.   : 1.100   Length:1903       
+    ##  1st Qu.: 4.625   Class :character  
+    ##  Median :14.700   Mode  :character  
+    ##  Mean   :23.219                     
+    ##  3rd Qu.:32.475                     
+    ##  Max.   :91.700                     
+    ##  NA's   :1813
+
+``` r
+write_rds(r1, "./cleanData/r1.rds")
+write_csv(r1, "./cleanData/r1.csv")
+```
